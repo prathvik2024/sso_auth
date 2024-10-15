@@ -16,15 +16,14 @@ class AuthService {
   static const String redirectUrl = 'com.example.ssoauth://login-callback';
   static const String issuer = 'https://dev-crnem0shb2y72h7g.us.auth0.com';
   static const String logoutUrl = 'com.example.ssoauth://logout-callback';
-  List<String> scopes = ['openid', 'profile', 'email'];
+  List<String> scopes = ['openid', 'profile', 'email', "offline_access"];
 
   Future<void> signInWithOIDC() async {
     String nonce = randomNonceString();
 
     try {
       final AuthorizationTokenResponse result = await appAuth.authorizeAndExchangeCode(
-        AuthorizationTokenRequest(clientId, redirectUrl,
-            issuer: issuer, scopes: scopes, allowInsecureConnections: true, nonce: sha256Hash(nonce)),
+        AuthorizationTokenRequest(clientId, redirectUrl, issuer: issuer, scopes: scopes, promptValues: ['login']),
       );
 
       print("log: ${result.accessToken}");

@@ -1,8 +1,5 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-
-import 'auth_service.dart';
-import 'firebase_service.dart';
+import 'package:ssoauth/oidc_auth_service.dart';
 
 class SignInPage extends StatefulWidget {
   const SignInPage({super.key});
@@ -12,45 +9,17 @@ class SignInPage extends StatefulWidget {
 }
 
 class _SignInPageState extends State<SignInPage> {
-  AuthService authService = AuthService();
-
-  bool isAlreayLogin = false;
-  String? accessToken;
-
-  void _login() async {
-    await authService.signInWithOIDC();
-    checkLogin();
-  }
-
-  void _logout() async {
-    await authService.logout();
-    accessToken = null;
-    isAlreayLogin = false;
-    setState(() {});
-  }
-
-  FirebaseAuth auth = FirebaseAuth.instance;
-
   @override
   void initState() {
     super.initState();
-    checkLogin();
-    if (FirebaseService.auth.currentUser != null) {
-      FirebaseService.instance.listenToTokens();
-    }
+    initAction();
   }
 
-  Future checkLogin() async {
-    String? token = await authService.getAccessToken();
-    print("log: ${auth.currentUser?.email}");
-    print("log: ${auth.currentUser?.displayName}");
-    if (auth.currentUser == null && token != null) {
-      _logout();
-    } else if (token != null) {
-      accessToken = token;
-      isAlreayLogin = true;
+  initAction() async {
+    final bool isAuth = await OIDCAuthService.instance.init();
+    if (isAuth) {
+      setState(() {});
     }
-    setState(() {});
   }
 
   @override
@@ -60,27 +29,29 @@ class _SignInPageState extends State<SignInPage> {
         title: Text('Flutter OIDC SSO APP 1'),
       ),
       body: Center(
-          child: isAlreayLogin
+          child: OIDCAuthService.instance.profile != null
               ? Column(
                   children: [
                     ElevatedButton(
-                      onPressed: _logout,
+                      onPressed: () async {
+                        await OIDCAuthService.instance.logout();
+                        setState(() {});
+                      },
                       child: Text('logout'),
                     ),
-                    Text("Access Token: ${accessToken}"),
-                    Text("User Email: ${auth.currentUser?.email}"),
-                    Text("User Email: ${auth.currentUser?.displayName}"),
+                    Text("Name: ${OIDCAuthService.instance.profile?.name}"),
+                    Text("Email: ${OIDCAuthService.instance.profile?.email}")
                   ],
                 )
               : Column(
                   children: [
                     ElevatedButton(
-                      onPressed: _login,
+                      onPressed: () async {
+                        await OIDCAuthService.instance.login();
+                        setState(() {});
+                      },
                       child: Text('Sign in with OIDC'),
                     ),
-                    Text("Access Token: ${accessToken}"),
-                    Text("User Email: ${auth.currentUser?.email}"),
-                    Text("User Email: ${auth.currentUser?.displayName}"),
                   ],
                 )),
     );
